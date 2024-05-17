@@ -1,9 +1,11 @@
-﻿using Microsoft.CognitiveServices.Speech;
+﻿using AIAsistant.NLPModel;
+using Microsoft.CognitiveServices.Speech;
 
 namespace AIAsistant
 {
     public partial class Form1 : Form
     {
+        private SoundRecorder recorder;
         private static Dictionary<string, Func<int, int, int>> operations = new Dictionary<string, Func<int, int, int>>()
         {
             { "Topla", (a, b) => a + b },
@@ -14,6 +16,7 @@ namespace AIAsistant
         public Form1()
         {
             InitializeComponent();
+            recorder = new SoundRecorder();
         }
 
         private async void button1_Click(object sender, EventArgs e)
@@ -21,13 +24,13 @@ namespace AIAsistant
             var config = SpeechConfig.FromSubscription("6a293a68d2e747ecbc162e3f8123e1df", "westeurope");
             config.SpeechRecognitionLanguage = "tr-TR";
             config.SpeechSynthesisLanguage = "tr-TR";
-             var recognizer = new SpeechRecognizer(config);
+            var recognizer = new SpeechRecognizer(config);
 
-             var recognitionResult = await recognizer.RecognizeOnceAsync();
-             
-             if (recognitionResult.Reason == ResultReason.RecognizedSpeech)
+            var recognitionResult = await recognizer.RecognizeOnceAsync();
+
+            if (recognitionResult.Reason == ResultReason.RecognizedSpeech)
             {
-                string command = recognitionResult.Text.Replace(".","");
+                string command = recognitionResult.Text.Replace(".", "");
                 Console.WriteLine($"Algılanan komut: {command}");
 
                 string response = ProcessCommand(command);
@@ -66,6 +69,19 @@ namespace AIAsistant
                 }
             }
             return "Geçersiz komut!";
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            // Kayıt başlatma butonuna tıklandığında ses kaydını başlat
+            string label = textBox1.Text; // TextBox'tan etiket al
+            recorder.StartRecording(label);
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            // Kayıt durdurma butonuna tıklandığında ses kaydını durdur
+            recorder.StopRecording();
         }
     }
 }
