@@ -1,10 +1,12 @@
 ﻿using AIAsistant.NLPModel;
+using CSCore;
 using CSCore.Codecs.WAV;
 using CSCore.SoundIn;
 using Microsoft.CognitiveServices.Speech;
-using Tensorflow.NumPy;
-using Tensorflow;
+using Newtonsoft.Json;
 using NumSharp;
+using NumSharp.Generic;
+using TensorFlow;
 
 namespace AIAsistant
 {
@@ -25,8 +27,12 @@ namespace AIAsistant
 
             _soundIn = new WasapiCapture();
             _soundIn.Initialize();
+            string label = textBox1.Text; // txtLabel, kullanıcının girdiği etiketi içeren bir TextBox öğesidir
 
-            _waveWriter = new WaveWriter(outputFilePath, _soundIn.WaveFormat);
+            WaveFormat waveFormat = new WaveFormat(16000, 16, 1,AudioEncoding.Pcm); // Örnek sıklığı: 16 kHz, bit derinliği: 16 bit, kanal sayısı: 1 (mono)
+        
+      
+            _waveWriter = new WaveWriter(outputFilePath, waveFormat);
 
             _soundIn.DataAvailable += (s, a) =>
             {
@@ -34,6 +40,25 @@ namespace AIAsistant
             };
 
             _soundIn.Start();
+
+            // Etiket bilgisini ses dosyasının adıyla eşleştirerek bir JSON dosyası oluşturun
+            string jsonFilePath = Path.Combine("SoundRecords", "labels.json");
+            if (!File.Exists(jsonFilePath))
+            {
+                var labels = new Dictionary<string, string>();
+                labels.Add(label, Path.GetFileName(outputFilePath));
+
+                string json = JsonConvert.SerializeObject(labels);
+                File.WriteAllText(jsonFilePath, json);
+            }
+            else
+            {
+                var labels = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(jsonFilePath));
+                labels.Add(label, Path.GetFileName(outputFilePath));
+
+                string json = JsonConvert.SerializeObject(labels);
+                File.WriteAllText(jsonFilePath, json);
+            }
         }
 
         private void btnStopRecording_Click(object sender, EventArgs e)
@@ -49,8 +74,8 @@ namespace AIAsistant
             string modelPath = "path_to_your_model/model.pb"; // Model dosya yolunu belirtin
 
             // TensorFlow oturumu ve grafiği oluştur
-            var graph = new Graph().as_default();
-            var session = new Session(graph);
+            var graph = new TensorFlow.TFGraph();
+            var session = new TensorFlow.TFSession(graph);
 
             // Modeli yükle
             var model = File.ReadAllBytes(modelPath);
@@ -61,19 +86,24 @@ namespace AIAsistant
             var audioBytes = File.ReadAllBytes(audioFilePath);
 
             // Tensor oluşturma (örnek tensör, ses verinizi uygun şekilde işleyin)
-            var audioTensor = NumSharp.np.array(audioBytes).reshape(1, audioBytes.Length);
-
+            var audioTensorV = NumSharp.np.array(audioBytes).reshape(1, audioBytes.Length);
+            TFTensor audioTensor = new TFTensor(audioTensorV.ToArray<byte>());
             // Modelin giriş ve çıkış tensörlerini alın
-            var inputOperation = graph.OperationByName("input");
-            var outputOperation = graph.OperationByName("output");
+            // var inputOperation = graph.GetOperationByName("input");
+            // var outputOperation = graph.GetOperationByName("output");
 
             // Tahmin yapma
             var runner = session.GetRunner();
-            runner.AddInput(inputOperation, audioTensor);
-            runner.Fetch(outputOperation);
+            runner.AddInput("input", audioTensor);
+            runner.Fetch("output");
 
             var result = runner.Run();
-            var predictedLabel = NumSharp.np.argmax(result[0]);
+
+            var resultArray = result[0].GetValue() as float[,];
+            var resultNdArray = np.array(resultArray);
+
+            // En büyük öğenin indeksini bulma
+            var predictedLabel = NumSharp.np.argmax(resultNdArray);
 
             MessageBox.Show($"Predicted label: {predictedLabel}");
         }

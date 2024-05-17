@@ -9,11 +9,22 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="SoundRecords\labels.json" />
+    <None Remove="train_model.py" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="train_model.py">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="CSCore" Version="1.2.1.2" />
     <PackageReference Include="Microsoft.CognitiveServices.Speech" Version="1.37.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="NumSharp" Version="0.30.0" />
-    <PackageReference Include="SciSharp.TensorFlow.Redist" Version="2.16.0" />
-    <PackageReference Include="TensorFlow.NET" Version="0.150.0" />
+    <PackageReference Include="TensorFlowSharp" Version="1.15.1" />
   </ItemGroup>
 
 </Project>
