@@ -1,87 +1,81 @@
 ﻿using AIAsistant.NLPModel;
+using CSCore.Codecs.WAV;
+using CSCore.SoundIn;
 using Microsoft.CognitiveServices.Speech;
+using Tensorflow.NumPy;
+using Tensorflow;
+using NumSharp;
 
 namespace AIAsistant
 {
     public partial class Form1 : Form
     {
-        private SoundRecorder recorder;
-        private static Dictionary<string, Func<int, int, int>> operations = new Dictionary<string, Func<int, int, int>>()
-        {
-            { "Topla", (a, b) => a + b },
-            { "Çıkar", (a, b) => a - b },
-            { "Çarp", (a, b) => a * b },
-            { "Böl", (a, b) => a / b }
-        };
+        private WasapiCapture _soundIn;
+        private WaveWriter _waveWriter;
+
         public Form1()
         {
             InitializeComponent();
-            recorder = new SoundRecorder();
         }
 
-        private async void button1_Click(object sender, EventArgs e)
+        private void btnStartRecording_Click(object sender, EventArgs e)
         {
-            var config = SpeechConfig.FromSubscription("6a293a68d2e747ecbc162e3f8123e1df", "westeurope");
-            config.SpeechRecognitionLanguage = "tr-TR";
-            config.SpeechSynthesisLanguage = "tr-TR";
-            var recognizer = new SpeechRecognizer(config);
+            string outputFilePath = Path.Combine("SoundRecords", $"recording_{DateTime.Now:yyyyMMddHHmmss}.wav");
+            Directory.CreateDirectory("SoundRecords");
 
-            var recognitionResult = await recognizer.RecognizeOnceAsync();
+            _soundIn = new WasapiCapture();
+            _soundIn.Initialize();
 
-            if (recognitionResult.Reason == ResultReason.RecognizedSpeech)
+            _waveWriter = new WaveWriter(outputFilePath, _soundIn.WaveFormat);
+
+            _soundIn.DataAvailable += (s, a) =>
             {
-                string command = recognitionResult.Text.Replace(".", "");
-                Console.WriteLine($"Algılanan komut: {command}");
+                _waveWriter.Write(a.Data, a.Offset, a.ByteCount);
+            };
 
-                string response = ProcessCommand(command);
-
-                var synthesizer = new SpeechSynthesizer(config);
-                await synthesizer.SpeakTextAsync(response);
-            }
-            else if (recognitionResult.Reason == ResultReason.NoMatch)
-            {
-                MessageBox.Show("No speech could be recognized.");
-            }
-            else if (recognitionResult.Reason == ResultReason.Canceled)
-            {
-                var cancellation = CancellationDetails.FromResult(recognitionResult);
-                MessageBox.Show($"CANCELED: Reason={cancellation.Reason}");
-
-                if (cancellation.Reason == CancellationReason.Error)
-                {
-                    MessageBox.Show($"CANCELED: ErrorCode={cancellation.ErrorCode}");
-                    MessageBox.Show($"CANCELED: ErrorDetails={cancellation.ErrorDetails}");
-                    MessageBox.Show($"CANCELED: Did you update the subscription info?");
-                }
-            }
-        }
-        private static string ProcessCommand(string command)
-        {
-            foreach (var operation in operations)
-            {
-                if (command.Contains(operation.Key))
-                {
-                    string[] words = command.Split(' ');
-                    int firstNumber = int.Parse(words[1]);
-                    int secondNumber = int.Parse(words[3]);
-                    int result = operation.Value(firstNumber, secondNumber);
-                    return $"{firstNumber} {operation.Key} {secondNumber} = {result}";
-                }
-            }
-            return "Geçersiz komut!";
+            _soundIn.Start();
         }
 
-        private void button2_Click(object sender, EventArgs e)
+        private void btnStopRecording_Click(object sender, EventArgs e)
         {
-            // Kayıt başlatma butonuna tıklandığında ses kaydını başlat
-            string label = textBox1.Text; // TextBox'tan etiket al
-            recorder.StartRecording(label);
+            _soundIn.Stop();
+            _waveWriter.Dispose();
+            _soundIn.Dispose();
         }
 
-        private void button3_Click(object sender, EventArgs e)
+        private void btnPredict_Click(object sender, EventArgs e)
         {
-            // Kayıt durdurma butonuna tıklandığında ses kaydını durdur
-            recorder.StopRecording();
+
+            string modelPath = "path_to_your_model/model.pb"; // Model dosya yolunu belirtin
+
+            // TensorFlow oturumu ve grafiği oluştur
+            var graph = new Graph().as_default();
+            var session = new Session(graph);
+
+            // Modeli yükle
+            var model = File.ReadAllBytes(modelPath);
+            graph.Import(model);
+
+            // Ses dosyasını oku
+            string audioFilePath = textBox1.Text;
+            var audioBytes = File.ReadAllBytes(audioFilePath);
+
+            // Tensor oluşturma (örnek tensör, ses verinizi uygun şekilde işleyin)
+            var audioTensor = NumSharp.np.array(audioBytes).reshape(1, audioBytes.Length);
+
+            // Modelin giriş ve çıkış tensörlerini alın
+            var inputOperation = graph.OperationByName("input");
+            var outputOperation = graph.OperationByName("output");
+
+            // Tahmin yapma
+            var runner = session.GetRunner();
+            runner.AddInput(inputOperation, audioTensor);
+            runner.Fetch(outputOperation);
+
+            var result = runner.Run();
+            var predictedLabel = NumSharp.np.argmax(result[0]);
+
+            MessageBox.Show($"Predicted label: {predictedLabel}");
         }
     }
 }

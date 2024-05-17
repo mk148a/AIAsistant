@@ -28,21 +28,21 @@
         /// </summary>
         private void InitializeComponent()
         {
-            button1 = new Button();
+            btnPredict = new Button();
             textBox1 = new TextBox();
-            button2 = new Button();
-            button3 = new Button();
+            btnStartRecording = new Button();
+            btnStopRecording = new Button();
             SuspendLayout();
             // 
-            // button1
+            // btnPredict
             // 
-            button1.Location = new Point(141, 50);
-            button1.Name = "button1";
-            button1.Size = new Size(75, 23);
-            button1.TabIndex = 0;
-            button1.Text = "button1";
-            button1.UseVisualStyleBackColor = true;
-            button1.Click += button1_Click;
+            btnPredict.Location = new Point(476, 197);
+            btnPredict.Name = "btnPredict";
+            btnPredict.Size = new Size(75, 23);
+            btnPredict.TabIndex = 0;
+            btnPredict.Text = "btnPredict";
+            btnPredict.UseVisualStyleBackColor = true;
+            btnPredict.Click += btnPredict_Click;
             // 
             // textBox1
             // 
@@ -51,35 +51,35 @@
             textBox1.Size = new Size(144, 23);
             textBox1.TabIndex = 1;
             // 
-            // button2
+            // btnStartRecording
             // 
-            button2.Location = new Point(228, 236);
-            button2.Name = "button2";
-            button2.Size = new Size(144, 23);
-            button2.TabIndex = 2;
-            button2.Text = "Start Recording";
-            button2.UseVisualStyleBackColor = true;
-            button2.Click += button2_Click;
+            btnStartRecording.Location = new Point(228, 236);
+            btnStartRecording.Name = "btnStartRecording";
+            btnStartRecording.Size = new Size(144, 23);
+            btnStartRecording.TabIndex = 2;
+            btnStartRecording.Text = "Start Recording";
+            btnStartRecording.UseVisualStyleBackColor = true;
+            btnStartRecording.Click += btnStartRecording_Click;
             // 
-            // button3
+            // btnStopRecording
             // 
-            button3.Location = new Point(228, 265);
-            button3.Name = "button3";
-            button3.Size = new Size(144, 23);
-            button3.TabIndex = 2;
-            button3.Text = "Stop Recording";
-            button3.UseVisualStyleBackColor = true;
-            button3.Click += button3_Click;
+            btnStopRecording.Location = new Point(228, 265);
+            btnStopRecording.Name = "btnStopRecording";
+            btnStopRecording.Size = new Size(144, 23);
+            btnStopRecording.TabIndex = 2;
+            btnStopRecording.Text = "Stop Recording";
+            btnStopRecording.UseVisualStyleBackColor = true;
+            btnStopRecording.Click += btnStopRecording_Click;
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
-            Controls.Add(button3);
-            Controls.Add(button2);
+            Controls.Add(btnStopRecording);
+            Controls.Add(btnStartRecording);
             Controls.Add(textBox1);
-            Controls.Add(button1);
+            Controls.Add(btnPredict);
             Name = "Form1";
             Text = "Form1";
             ResumeLayout(false);
@@ -88,9 +88,9 @@
 
         #endregion
 
-        private Button button1;
+        private Button btnPredict;
         private TextBox textBox1;
-        private Button button2;
-        private Button button3;
+        private Button btnStartRecording;
+        private Button btnStopRecording;
     }
 }
